@@ -36,18 +36,11 @@ app.get('/todos/:id', function(request, response) {
 
 // Add data
 app.post('/todos', function(request, response) {
-  var body = request.body;
+  var body = _.pick(request.body, 'description', 'completed');
 
   if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0) {
     return response.status(400).send();
   }
-
-  body = _.pick(body, 'description', 'completed');
-  // todos[todoNextId-1] = {
-  //   id: todoNextId,
-  //   description: body.description,
-  //   completed: body.completed
-  // };
 
   body.description = body.description.trim();
   body.id = todoNextId;
@@ -55,6 +48,21 @@ app.post('/todos', function(request, response) {
 
   response.json(body);
   todoNextId++;
+});
+
+
+// Delete Data
+app.delete('/todos/:id', function (request, response) {
+  var reqId = parseInt(request.params.id,10);
+  var resTodo = _.findWhere(todos, {id: reqId});
+
+  if (resTodo) {
+    todos = _.without(todos,resTodo);
+    response.send('Deleted ' + JSON.stringify(resTodo));
+  } else {
+    response.status(404).json({"error": "No todo found with that id"});
+  }
+
 });
 
 // SERVER INITIATION
