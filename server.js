@@ -50,7 +50,6 @@ app.post('/todos', function(request, response) {
   todoNextId++;
 });
 
-
 // Delete Data
 app.delete('/todos/:id', function (request, response) {
   var reqId = parseInt(request.params.id,10);
@@ -62,7 +61,32 @@ app.delete('/todos/:id', function (request, response) {
   } else {
     response.status(404).json({"error": "No todo found with that id"});
   }
+});
 
+// Update Data
+app.put('/todos/:id', function (request, response) {
+  var reqId = parseInt(request.params.id,10);
+  var resTodo = _.findWhere(todos, {id: reqId});
+  var body = _.pick(request.body, 'description', 'completed');
+  var validAttributes = {};
+
+  if (!resTodo) {
+    return response.status(404).json({"error": "No todo found with that id"});
+  }
+
+  if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
+    validAttributes.completed = body.completed;
+  } else if (body.hasOwnProperty('completed')) {
+    return response.status(400).send("Completed missing");
+  }
+  if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
+    validAttributes.description = body.description.trim();
+  } else if (body.hasOwnProperty('description')) {
+    return response.status(400).send("Description Missing");
+  }
+
+  _.extend(resTodo, validAttributes);
+  response.json(resTodo);
 });
 
 // SERVER INITIATION
