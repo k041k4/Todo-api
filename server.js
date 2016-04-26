@@ -17,17 +17,30 @@ app.get('/', function(request, response) {
   response.send('Todo API root');
 });
 
-// Get All Queried todos
+// Get /todos?completed=true&q=work
 app.get('/todos', function(request, response) {
   var queryParams = request.query;
   var filteredTodos = todos;
 
-
   if (queryParams.completed === 'true' && _.has(queryParams,'completed')) {
-    filteredTodos = _.where(todos,{completed: true});
+    filteredTodos = _.where(filteredTodos,{completed: true});
   } else if (queryParams.completed === 'false' && _.has(queryParams,'completed')) {
-    filteredTodos = _.where(todos,{completed: false});
+    filteredTodos = _.where(filteredTodos,{completed: false});
   }
+
+  if (_.has(queryParams,'q')) {
+    if (queryParams.q.length > 0) {
+      filteredTodos = _.filter(filteredTodos,function(todo) {
+        if (todo.description.indexOf(queryParams.q) < 1 ) {
+          return false;
+        } else {
+          return true;
+        }
+      });
+    }
+  }
+
+
   response.json(filteredTodos);
 });
 
