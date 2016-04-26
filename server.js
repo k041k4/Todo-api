@@ -31,7 +31,7 @@ app.get('/todos', function(request, response) {
   if (_.has(queryParams,'q')) {
     if (queryParams.q.length > 0) {
       filteredTodos = _.filter(filteredTodos,function(todo) {
-        if (todo.description.toLowerCase().indexOf(queryParams.q) < 1 ) {
+        if (todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) < 1 ) {
           return false;
         } else {
           return true;
