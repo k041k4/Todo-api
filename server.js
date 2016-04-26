@@ -17,9 +17,18 @@ app.get('/', function(request, response) {
   response.send('Todo API root');
 });
 
-// Get All todos
+// Get All Queried todos
 app.get('/todos', function(request, response) {
-  response.json(todos);
+  var queryParams = request.query;
+  var filteredTodos = todos;
+
+
+  if (queryParams.completed === 'true' && _.has(queryParams,'completed')) {
+    filteredTodos = _.where(todos,{completed: true});
+  } else if (queryParams.completed === 'false' && _.has(queryParams,'completed')) {
+    filteredTodos = _.where(todos,{completed: false});
+  }
+  response.json(filteredTodos);
 });
 
 // Get Specific todo
