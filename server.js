@@ -19,29 +19,31 @@ app.get('/', function(request, response) {
 
 // Get /todos?completed=true&q=work
 app.get('/todos', function(request, response) {
-  var queryParams = request.query;
-  var filteredTodos = todos;
+  var query = request.query;
+  var where = {};
 
-  if (queryParams.completed === 'true' && _.has(queryParams,'completed')) {
-    filteredTodos = _.where(filteredTodos,{completed: true});
-  } else if (queryParams.completed === 'false' && _.has(queryParams,'completed')) {
-    filteredTodos = _.where(filteredTodos,{completed: false});
+  if (_.has(query,'completed') && query.completed === 'true') {
+    where.completed = true;
+  } else if (_.has(query,'completed') && query.completed === 'false') {
+    where.completed = false;
+  }
+  if (_.has(query,'description')) {
+    where.description = {
+      $like: '%' + query.description + '%'
+    };
   }
 
-  if (_.has(queryParams,'q')) {
-    if (queryParams.q.length > 0) {
-      filteredTodos = _.filter(filteredTodos,function(todo) {
-        if (todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) < 1 ) {
-          return false;
-        } else {
-          return true;
-        }
-      });
+  db.todo.findAll({
+    where: where
+  }).then(function(todos){
+    if (todos) {
+      response.status(200).json(todos);
+    } else {
+      response.status(404).send('No data found for specified query' );
     }
-  }
-
-
-  response.json(filteredTodos);
+  }).catch(function(e) {
+    response.status(500).json(e);
+  });
 });
 
 // Get Specific todo
