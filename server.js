@@ -121,6 +121,21 @@ app.put('/todos/:id', function (request, response) {
 });
 
 
+// Add user data
+app.post('/users', function(request, response) {
+  var body = _.pick(request.body, 'email', 'password');
+
+  body.email = body.email.trim();
+  body.password = body.password.trim();
+
+  db.user.create(body).then(function(user) {
+      response.status(200).json(user);
+  }).catch(function(e) {
+      response.status(400).json(e);
+  });
+});
+
+
 db.sequelize.sync({
 //  force: true
 }).then(function() {
