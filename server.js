@@ -5,7 +5,6 @@ var db = require('./db.js');
 
 var app = express();
 var PORT = process.env.PORT || 3000;
-var todoNextId = 1;
 var todos = [];
 
 // MODULES INITIATION
@@ -91,39 +90,34 @@ app.delete('/todos/:id', function (request, response) {
   }).catch(function(e) {
     response.status(500).json(e);
   });
-
-  // if (resTodo) {
-  //   todos = _.without(todos,resTodo);
-  //   response.send('Deleted ' + JSON.stringify(resTodo));
-  // } else {
-  //   response.status(404).json({"error": "No todo found with that id"});
-  // }
 });
 
 // Update Data
 app.put('/todos/:id', function (request, response) {
   var reqId = parseInt(request.params.id,10);
-  var resTodo = _.findWhere(todos, {id: reqId});
   var body = _.pick(request.body, 'description', 'completed');
-  var validAttributes = {};
+  var attributes = {};
 
-  if (!resTodo) {
-    return response.status(404).json({"error": "No todo found with that id"});
+  if (body.hasOwnProperty('completed')) {
+    attributes.completed = body.completed;
+  }
+  if (body.hasOwnProperty('description')) {
+    attributes.description = body.description.trim();
   }
 
-  if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
-    validAttributes.completed = body.completed;
-  } else if (body.hasOwnProperty('completed')) {
-    return response.status(400).send("Completed missing");
-  }
-  if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
-    validAttributes.description = body.description.trim();
-  } else if (body.hasOwnProperty('description')) {
-    return response.status(400).send("Description Missing");
-  }
-
-  _.extend(resTodo, validAttributes);
-  response.json(resTodo);
+  db.todo.findById(reqId).then(function(todo) {
+    if (todo) {
+      todo.update(attributes).then(function (todo) {
+        response.json(todo.toJSON());
+      }, function(e) {
+        response.status(400).json(e);
+      });
+    } else {
+      response.status(404).send('Todo with ID ' + reqId + ' doesn\'t exists' );
+    }
+  }, function(e) {
+    response.status(500).json(e);
+  });
 });
 
 
