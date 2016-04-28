@@ -47,13 +47,16 @@ app.get('/todos', function(request, response) {
 // Get Specific todo
 app.get('/todos/:id', function(request, response) {
   var reqId = parseInt(request.params.id,10);
-  var resTodo = _.findWhere(todos, {id: reqId});
 
-  if (resTodo) {
-    response.json(resTodo);
-  } else {
-    response.status(404).send();
-  }
+  db.todo.findById(reqId).then(function(todo){
+    if (!!todo) {
+      response.status(200).json(todo);
+    } else {
+      response.status(404).send('Todo with ID ' + reqId + ' doesn\'t exists' );
+    }
+  }).catch(function(e) {
+    response.status(500).json(e);
+  });
 });
 
 // Add data
@@ -64,22 +67,9 @@ app.post('/todos', function(request, response) {
 
   db.todo.create(body).then(function(todo) {
       response.status(200).json(todo);
-  }).catch (function(e) {
+  }).catch(function(e) {
       response.status(400).json(e);
   });
-
-
-
-  // if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0) {
-  //   return response.status(400).send();
-  // }
-  //
-  // body.description = body.description.trim();
-  // body.id = todoNextId;
-  // todos.push(body);
-  //
-  // response.json(body);
-  // todoNextId++;
 });
 
 // Delete Data
