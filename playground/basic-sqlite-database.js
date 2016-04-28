@@ -33,6 +33,7 @@ sequelize.sync({
   //   });
   // }).then(function() {
   // return
+
   Todo.findAll({
     where: {
       id: 2
