@@ -20,6 +20,7 @@ var db = {};
 //Import Data Models
 db.todo = sequelize.import(__dirname + '/models/todo.js');  // todo data model
 db.user = sequelize.import(__dirname + '/models/user.js');  // user data model
+db.token = sequelize.import(__dirname + '/models/token.js');  // user data model
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 

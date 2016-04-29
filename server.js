@@ -22,7 +22,7 @@ app.get('/', function(request, response) {
 app.get('/todos', middleware.requireAuthentication, function(request, response) {
   var query = request.query;
   var where = {
-    userId: request.user.id
+    userId: request.user.get('id')
   };
 
   if (_.has(query,'completed') && query.completed === 'true') {
@@ -53,7 +53,7 @@ app.get('/todos/:id', middleware.requireAuthentication, function(request, respon
   var reqId = parseInt(request.params.id,10);
 
   db.todo.findById(reqId).then(function(todo){
-    if (!!todo && todo.userId === request.user.id) {
+    if (!!todo && todo.userId === request.user.get('id')) {
       response.status(200).json(todo);
     } else {
       response.status(404).send('Todo with ID ' + reqId + ' doesn\'t exists' );
@@ -87,7 +87,7 @@ app.delete('/todos/:id', middleware.requireAuthentication, function (request, re
   db.todo.destroy({
     where: {
       id: reqId,
-      userId: request.user.id
+      userId: request.user.get('id')
     }
   }).then(function(rowsDeleted) {
     if (rowsDeleted > 0) {
@@ -114,7 +114,7 @@ app.put('/todos/:id', middleware.requireAuthentication, function (request, respo
   }
 
   db.todo.findById(reqId).then(function(todo) {
-    if (todo && todo.userId === request.user.id) {
+    if (todo && todo.userId === request.user.get('id')) {
       todo.update(attributes).then(function (todo) {
         response.json(todo.toJSON());
       }, function(e) {
@@ -143,20 +143,32 @@ app.post('/users', function(request, response) {
 // User Login
 app.post('/users/login', function(request, response) {
   var body = _.pick(request.body, 'email', 'password');
-  var where = {};
+  var userInstance;
 
   db.user.authenticate(body).then(function(user) {
     var token = user.generateToken('authentication');
-    if (token) {
-      response.status(200).header('Auth', token).json(user.toPublicJSON());
-    } else {
-      response.status(401).send();
-    }
-  }, function() {
+    userInstance = user;
+
+    // Token to DB
+    return db.token.create({
+      token: token
+    });
+  }).then(function(tokenInstance) {
+    response.status(200).header('Auth', tokenInstance.get('token')).json(userInstance.toPublicJSON());
+  }).catch (function() {
     response.status(401).send();
   });
 });
 
+app.delete('/users/login', middleware.requireAuthentication, function (request, response) {
+  var reqId = parseInt(request.params.id,10);
+
+  request.token.destroy().then(function() {
+    response.status(204).send();
+  }).catch(function() {
+    response.status(500).send();
+  });
+});
 
 // Database Synchronization
 db.sequelize.sync({
