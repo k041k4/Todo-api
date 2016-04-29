@@ -2,6 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var _ = require('underscore');
 var db = require('./db.js');
+var bcrypt = require('bcryptjs');
 
 var app = express();
 var PORT = process.env.PORT || 3000;
@@ -125,9 +126,6 @@ app.put('/todos/:id', function (request, response) {
 app.post('/users', function(request, response) {
   var body = _.pick(request.body, 'email', 'password');
 
-  body.email = body.email.trim();
-  body.password = body.password.trim();
-
   db.user.create(body).then(function(user) {
       response.status(200).json(user.toPublicJSON());
   }).catch(function(e) {
@@ -135,9 +133,21 @@ app.post('/users', function(request, response) {
   });
 });
 
+// User Login
+app.post('/users/login', function(request, response) {
+  var body = _.pick(request.body, 'email', 'password');
+  var where = {};
+
+  db.user.authenticate(body).then(function(user) {
+    response.status(200).json(user.toPublicJSON());
+  }, function() {
+    response.status(401).send();
+  });
+});
+
 
 db.sequelize.sync({
-//  force: true
+  force: true
 }).then(function() {
   console.log('Database is Initiated');
   // SERVER INITIATION
