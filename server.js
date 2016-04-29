@@ -18,10 +18,12 @@ app.get('/', function(request, response) {
   response.send('Todo API root');
 });
 
-// Get /todos?completed=true&q=work
+// Get /todos?completed=true&description=work
 app.get('/todos', middleware.requireAuthentication, function(request, response) {
   var query = request.query;
-  var where = {};
+  var where = {
+    userId: request.user.id
+  };
 
   if (_.has(query,'completed') && query.completed === 'true') {
     where.completed = true;
@@ -33,7 +35,6 @@ app.get('/todos', middleware.requireAuthentication, function(request, response) 
       $like: '%' + query.description + '%'
     };
   }
-
   db.todo.findAll({
     where: where
   }).then(function(todos){
@@ -52,7 +53,7 @@ app.get('/todos/:id', middleware.requireAuthentication, function(request, respon
   var reqId = parseInt(request.params.id,10);
 
   db.todo.findById(reqId).then(function(todo){
-    if (!!todo) {
+    if (!!todo && todo.userId === request.user.id) {
       response.status(200).json(todo);
     } else {
       response.status(404).send('Todo with ID ' + reqId + ' doesn\'t exists' );
@@ -69,7 +70,11 @@ app.post('/todos', middleware.requireAuthentication, function(request, response)
   body.description = body.description.trim();
 
   db.todo.create(body).then(function(todo) {
+      request.user.addTodo(todo).then(function() {
+        return todo.reload();   //refresh todo after adding user ID
+      }).then(function(todo) {
       response.status(200).json(todo);
+      });
   }).catch(function(e) {
       response.status(400).json(e);
   });
@@ -81,7 +86,8 @@ app.delete('/todos/:id', middleware.requireAuthentication, function (request, re
 
   db.todo.destroy({
     where: {
-      id: reqId
+      id: reqId,
+      userId: request.user.id
     }
   }).then(function(rowsDeleted) {
     if (rowsDeleted > 0) {
@@ -108,7 +114,7 @@ app.put('/todos/:id', middleware.requireAuthentication, function (request, respo
   }
 
   db.todo.findById(reqId).then(function(todo) {
-    if (todo) {
+    if (todo && todo.userId === request.user.id) {
       todo.update(attributes).then(function (todo) {
         response.json(todo.toJSON());
       }, function(e) {
@@ -154,7 +160,7 @@ app.post('/users/login', function(request, response) {
 
 // Database Synchronization
 db.sequelize.sync({
-  force: true
+  // force: true
 }).then(function() {
   console.log('Database is Initiated');
   // Server Setup
