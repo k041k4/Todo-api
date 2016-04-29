@@ -129,7 +129,7 @@ app.post('/users', function(request, response) {
   body.password = body.password.trim();
 
   db.user.create(body).then(function(user) {
-      response.status(200).json(user);
+      response.status(200).json(user.toPublicJSON());
   }).catch(function(e) {
       response.status(400).json(e);
   });
