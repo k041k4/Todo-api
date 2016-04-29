@@ -139,18 +139,24 @@ app.post('/users/login', function(request, response) {
   var where = {};
 
   db.user.authenticate(body).then(function(user) {
-    response.status(200).json(user.toPublicJSON());
+    var token = user.generateToken('authentication');
+    if (token) {
+      response.status(200).header('Auth', token).json(user.toPublicJSON());
+    } else {
+      response.status(401).send();
+    }
   }, function() {
     response.status(401).send();
   });
 });
 
 
+// Database Synchronization
 db.sequelize.sync({
   force: true
 }).then(function() {
   console.log('Database is Initiated');
-  // SERVER INITIATION
+  // Server Setup
   app.listen(PORT, function() {
     console.log('Express listening on port ' + PORT);
   });
