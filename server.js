@@ -160,7 +160,7 @@ app.post('/users/login', function(request, response) {
 
 // Database Synchronization
 db.sequelize.sync({
-  // force: true
+  force: true
 }).then(function() {
   console.log('Database is Initiated');
   // Server Setup
